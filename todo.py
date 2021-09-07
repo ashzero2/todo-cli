@@ -1,17 +1,20 @@
 import argparse
+import getpass
 from os import path
 import sys
 import json
 import datetime
 
+user = getpass.getuser()
+
 class fmt:
     HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'
-    ENDC = '\033[0m'
+    END = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
@@ -38,35 +41,44 @@ def add_tasks(task):
     	"status"     : "Not Finished",
     	"end"		 : end_date
     }
-    write_json(add_task, "tasks", "todo.json")
+    write_json(add_task, "tasks", f'/home/{user}/.todo.json')
+
+def remove_tasks(index):
+    with open(f'/home/{user}/.todo.json') as file:
+        data = json.load(file)
+    data["tasks"].pop(index-1)
+    with open(f'/home/{user}/.todo.json','w') as f:
+        json.dump(data,f,indent=4)
 
 def list_tasks():
-    print("\n"+fmt.BOLD+fmt.HEADER+"Tasks :"+fmt.ENDC)
-    with open("todo.json","r") as lists :
+    print("\n"+fmt.BOLD+fmt.HEADER+"Tasks :"+fmt.END+"\n")
+    with open(f'/home/{user}/.todo.json',"r") as lists :
         data = json.load(lists)
         for i,j in enumerate(data["tasks"]):
             tasks = j
             if tasks["end"] == "":
-                print(fmt.OKGREEN+f'{i+1} : '+fmt.ENDC+tasks["name"])
+                print(fmt.GREEN+f'{i+1} : '+fmt.END+tasks["name"])
             else:
-                start = datetime.datetime.strptime(tasks["start_date"],"%Y-%m-%d")
+                start = datetime.datetime.strptime(datetime.datetime.today().strftime('%Y-%m-%d'),"%Y-%m-%d")
                 end = datetime.datetime.strptime(tasks["end"],"%Y-%m-%d")
                 days = (end-start).days
                 if days < 10 :
-                    print(fmt.FAIL+f'{i+1} : '+tasks["name"]+fmt.ENDC+f'({days}d)')
+                    print(fmt.FAIL+f'{i+1} : '+tasks["name"]+fmt.END+f'({days}d)')
                 elif days < 30 :
-                    print(fmt.WARNING+f'{i+1} : '+tasks["name"]+fmt.ENDC+f'({days}d)')
+                    print(fmt.WARNING+f'{i+1} : '+tasks["name"]+fmt.END+f'({days}d)')
                 else:
-                    print(fmt.OKGREEN+f'{i+1} : '+fmt.ENDC+tasks["name"])
+                    print(fmt.GREEN+f'{i+1} : '+fmt.END+tasks["name"])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-a","--add",help="Add a todo",metavar="")
-    parser.add_argument("-r","--rem",help="remove todo based on number",type=int,metavar="")
+    parser.add_argument("-r","--rem",help="remove todo based on index",type=int,metavar="")
     parser.add_argument("-l","--list",help="list all tasks",action='store_true')
     parse = parser.parse_args()
 
     if parse.add :
         add_tasks(parse.add)
+    elif parse.rem :
+        remove_tasks(parse.rem)
     elif parse.list :
         list_tasks()
